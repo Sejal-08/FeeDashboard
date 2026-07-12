@@ -20,7 +20,17 @@ const getInitialState = (): AppState => {
   const saved = localStorage.getItem(STORAGE_KEY);
   if (saved) {
     try {
-      return JSON.parse(saved);
+      const parsed = JSON.parse(saved);
+      const validBatches = ['Class 8', 'Class 9', 'Class 10', 'Class 11', 'Class 12'];
+      
+      // Filter out legacy students from before the batch dropdown was added
+      const validStudents = (parsed.students || []).filter((s: Student) => validBatches.includes(s.batch));
+      const validStudentIds = new Set(validStudents.map((s: Student) => s.id));
+      
+      // Filter out fee records belonging to legacy students
+      const validFeeRecords = (parsed.feeRecords || []).filter((r: FeeRecord) => validStudentIds.has(r.studentId));
+      
+      return { students: validStudents, feeRecords: validFeeRecords };
     } catch (e) {
       console.error('Failed to parse local storage data', e);
     }
