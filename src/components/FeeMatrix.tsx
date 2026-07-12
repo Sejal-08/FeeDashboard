@@ -11,11 +11,14 @@ export const FeeMatrix: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
   const [selectedStudentId, setSelectedStudentId] = useState('');
   const [selectedMonth, setSelectedMonth] = useState('');
-  
   // Payment Form State
   const [amount, setAmount] = useState(0);
   const [method, setMethod] = useState<PaymentMethod>('cash');
   const [status, setStatus] = useState<FeeStatus>('paid');
+  
+  const [activeBatchTab, setActiveBatchTab] = useState<string>('Class 10');
+  const batches = ['Class 8', 'Class 9', 'Class 10', 'Class 11', 'Class 12'];
+  const filteredStudents = students.filter(s => s.batch === activeBatchTab);
 
   // Generate last 6 months based on baseDate
   const months = Array.from({ length: 6 }).map((_, i) => {
@@ -102,9 +105,22 @@ export const FeeMatrix: React.FC = () => {
         .hover-bg:hover { background-color: rgba(255,255,255,0.05); }
       `}</style>
 
+      <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '8px' }}>
+        {batches.map(b => (
+          <button 
+            key={b}
+            onClick={() => setActiveBatchTab(b)}
+            className={`btn ${activeBatchTab === b ? 'btn-primary' : ''}`}
+            style={{ whiteSpace: 'nowrap' }}
+          >
+            {b}
+          </button>
+        ))}
+      </div>
+
       <div className="card table-container">
-        {students.length === 0 ? (
-          <p style={{ color: 'var(--text-muted)' }}>Please add students first to track their fees.</p>
+        {filteredStudents.length === 0 ? (
+          <p style={{ color: 'var(--text-muted)' }}>No students found in {activeBatchTab}.</p>
         ) : (
           <table>
             <thead>
@@ -118,7 +134,7 @@ export const FeeMatrix: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {students.map(student => (
+              {filteredStudents.map(student => (
                 <tr key={student.id}>
                   <td className="sticky-col" style={{ position: 'sticky', left: 0, backgroundColor: 'var(--bg-card)', fontWeight: 500, zIndex: 10, borderRight: '1px solid var(--border-color)' }}>
                     <div style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{student.name}</div>

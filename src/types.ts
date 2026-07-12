@@ -4,7 +4,6 @@ export interface Student {
   id: string;
   name: string;
   batch: BatchType | string;
-  contact: string;
   monthlyFee: number;
 }
 

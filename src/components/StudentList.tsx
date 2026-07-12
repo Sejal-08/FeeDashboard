@@ -7,11 +7,11 @@ export const StudentList: React.FC = () => {
   const { students, addStudent, updateStudent, deleteStudent } = useFeeData();
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [activeBatchTab, setActiveBatchTab] = useState<string>('Class 10');
 
   // Form State
   const [name, setName] = useState('');
   const [batch, setBatch] = useState('Class 10');
-  const [contact, setContact] = useState('');
   const [monthlyFee, setMonthlyFee] = useState(0);
 
   const openModal = (student?: Student) => {
@@ -19,13 +19,11 @@ export const StudentList: React.FC = () => {
       setEditingId(student.id);
       setName(student.name);
       setBatch(student.batch);
-      setContact(student.contact);
       setMonthlyFee(student.monthlyFee);
     } else {
       setEditingId(null);
       setName('');
-      setBatch('Class 10');
-      setContact('');
+      setBatch(activeBatchTab !== 'All' ? activeBatchTab : 'Class 10');
       setMonthlyFee(0);
     }
     setShowModal(true);
@@ -34,12 +32,15 @@ export const StudentList: React.FC = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (editingId) {
-      updateStudent({ id: editingId, name, batch, contact, monthlyFee });
+      updateStudent({ id: editingId, name, batch, monthlyFee });
     } else {
-      addStudent({ name, batch, contact, monthlyFee });
+      addStudent({ name, batch, monthlyFee });
     }
     setShowModal(false);
   };
+
+  const batches = ['Class 8', 'Class 9', 'Class 10', 'Class 11', 'Class 12'];
+  const filteredStudents = students.filter(s => s.batch === activeBatchTab);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
@@ -50,26 +51,35 @@ export const StudentList: React.FC = () => {
         </button>
       </div>
 
+      <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '8px' }}>
+        {batches.map(b => (
+          <button 
+            key={b}
+            onClick={() => setActiveBatchTab(b)}
+            className={`btn ${activeBatchTab === b ? 'btn-primary' : ''}`}
+            style={{ whiteSpace: 'nowrap' }}
+          >
+            {b}
+          </button>
+        ))}
+      </div>
+
       <div className="card table-container">
-        {students.length === 0 ? (
-          <p style={{ color: 'var(--text-muted)' }}>No students added yet.</p>
+        {filteredStudents.length === 0 ? (
+          <p style={{ color: 'var(--text-muted)' }}>No students found in {activeBatchTab}.</p>
         ) : (
           <table>
             <thead>
               <tr>
                 <th>Name</th>
-                <th>Batch/Class</th>
-                <th>Contact</th>
                 <th>Monthly Fee</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {students.map(student => (
+              {filteredStudents.map(student => (
                 <tr key={student.id}>
                   <td style={{ fontWeight: 500 }}>{student.name}</td>
-                  <td>{student.batch}</td>
-                  <td>{student.contact}</td>
                   <td>₹{student.monthlyFee}</td>
                   <td>
                     <div style={{ display: 'flex', gap: '8px' }}>
@@ -105,17 +115,9 @@ export const StudentList: React.FC = () => {
                 <div className="form-group" style={{ flex: 1 }}>
                   <label>Batch / Class</label>
                   <select required className="form-control" value={batch} onChange={e => setBatch(e.target.value)}>
-                    <option value="Class 8">Class 8</option>
-                    <option value="Class 9">Class 9</option>
-                    <option value="Class 10">Class 10</option>
-                    <option value="Class 11">Class 11</option>
-                    <option value="Class 12">Class 12</option>
+                    {batches.map(b => <option key={b} value={b}>{b}</option>)}
                   </select>
                 </div>
-              </div>
-              <div className="form-group">
-                <label>Contact Number</label>
-                <input required className="form-control" value={contact} onChange={e => setContact(e.target.value)} />
               </div>
               <div className="form-group">
                 <label>Monthly Fee Amount (₹)</label>
