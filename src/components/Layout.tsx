@@ -1,5 +1,6 @@
 import React from 'react';
 import { LayoutDashboard, Users, Receipt, Settings } from 'lucide-react';
+import Logo from '../assets/Logo.jpg.jpeg';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -19,13 +20,15 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTa
     <div className="dashboard-layout">
       <header className="mobile-header">
         <h2 style={{ margin: 0, fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent-blue)', lineHeight: '1.4' }}>
-          <Receipt size={24} /> Tarun Classes Of Mathematics
+          <img src={Logo} alt="Logo" style={{ width: '28px', height: '28px', borderRadius: '8px', objectFit: 'cover' }} />
+          Tarun Classes Of Mathematics
         </h2>
       </header>
       <aside className="sidebar">
         <div className="sidebar-header" style={{ padding: '16px 8px', marginBottom: '16px' }}>
           <h2 style={{ margin: 0, fontSize: '1.25rem', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent-blue)', lineHeight: '1.4' }}>
-            <Receipt /> Tarun Classes Of Mathematics
+            <img src={Logo} alt="Logo" style={{ width: '32px', height: '32px', borderRadius: '8px', objectFit: 'cover' }} />
+            Tarun Classes Of Mathematics
           </h2>
         </div>
         

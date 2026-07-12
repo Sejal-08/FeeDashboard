@@ -1,10 +1,10 @@
 import React from 'react';
 import { useFeeData } from '../FeeContext';
-import { IndianRupee, Users, TrendingUp, AlertCircle } from 'lucide-react';
+import { IndianRupee, Users, TrendingUp, AlertCircle, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 
 export const DashboardOverview: React.FC = () => {
-  const { students, feeRecords } = useFeeData();
+  const { students, feeRecords, deleteFeeRecord } = useFeeData();
 
   const currentMonth = format(new Date(), 'yyyy-MM');
   
@@ -82,6 +82,7 @@ export const DashboardOverview: React.FC = () => {
                   <th>Amount</th>
                   <th>Date Paid</th>
                   <th>Method</th>
+                  <th>Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -94,6 +95,19 @@ export const DashboardOverview: React.FC = () => {
                       <td style={{ color: 'var(--accent-green)', fontWeight: 600 }}>₹{record.amount}</td>
                       <td>{record.datePaid ? format(new Date(record.datePaid), 'dd MMM yyyy') : '-'}</td>
                       <td style={{ textTransform: 'capitalize' }}>{record.paymentMethod}</td>
+                      <td>
+                        <button 
+                          className="btn" 
+                          style={{ padding: '4px 8px', color: 'var(--accent-red)' }} 
+                          onClick={() => {
+                            if (confirm('Are you sure you want to delete this payment record?')) {
+                              deleteFeeRecord(record.id);
+                            }
+                          }}
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </td>
                     </tr>
                   );
                 })}
