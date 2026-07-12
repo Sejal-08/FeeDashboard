@@ -1,8 +1,9 @@
+export type BatchType = 'Class 8' | 'Class 9' | 'Class 10' | 'Class 11' | 'Class 12';
+
 export interface Student {
   id: string;
   name: string;
-  rollNumber: string;
-  batch: string;
+  batch: BatchType | string;
   contact: string;
   monthlyFee: number;
 }

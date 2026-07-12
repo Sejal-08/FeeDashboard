@@ -10,8 +10,7 @@ export const StudentList: React.FC = () => {
 
   // Form State
   const [name, setName] = useState('');
-  const [rollNumber, setRollNumber] = useState('');
-  const [batch, setBatch] = useState('');
+  const [batch, setBatch] = useState('Class 10');
   const [contact, setContact] = useState('');
   const [monthlyFee, setMonthlyFee] = useState(0);
 
@@ -19,15 +18,13 @@ export const StudentList: React.FC = () => {
     if (student) {
       setEditingId(student.id);
       setName(student.name);
-      setRollNumber(student.rollNumber);
       setBatch(student.batch);
       setContact(student.contact);
       setMonthlyFee(student.monthlyFee);
     } else {
       setEditingId(null);
       setName('');
-      setRollNumber('');
-      setBatch('');
+      setBatch('Class 10');
       setContact('');
       setMonthlyFee(0);
     }
@@ -37,9 +34,9 @@ export const StudentList: React.FC = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (editingId) {
-      updateStudent({ id: editingId, name, rollNumber, batch, contact, monthlyFee });
+      updateStudent({ id: editingId, name, batch, contact, monthlyFee });
     } else {
-      addStudent({ name, rollNumber, batch, contact, monthlyFee });
+      addStudent({ name, batch, contact, monthlyFee });
     }
     setShowModal(false);
   };
@@ -60,7 +57,6 @@ export const StudentList: React.FC = () => {
           <table>
             <thead>
               <tr>
-                <th>Roll No</th>
                 <th>Name</th>
                 <th>Batch/Class</th>
                 <th>Contact</th>
@@ -71,7 +67,6 @@ export const StudentList: React.FC = () => {
             <tbody>
               {students.map(student => (
                 <tr key={student.id}>
-                  <td>{student.rollNumber}</td>
                   <td style={{ fontWeight: 500 }}>{student.name}</td>
                   <td>{student.batch}</td>
                   <td>{student.contact}</td>
@@ -102,18 +97,20 @@ export const StudentList: React.FC = () => {
           <div className="modal-content">
             <h2 style={{ marginTop: 0, marginBottom: '24px' }}>{editingId ? 'Edit Student' : 'Add New Student'}</h2>
             <form onSubmit={handleSubmit}>
-              <div className="form-group">
-                <label>Full Name</label>
-                <input required className="form-control" value={name} onChange={e => setName(e.target.value)} />
-              </div>
               <div className="form-row">
                 <div className="form-group" style={{ flex: 1 }}>
-                  <label>Roll Number</label>
-                  <input required className="form-control" value={rollNumber} onChange={e => setRollNumber(e.target.value)} />
+                  <label>Full Name</label>
+                  <input required className="form-control" value={name} onChange={e => setName(e.target.value)} />
                 </div>
                 <div className="form-group" style={{ flex: 1 }}>
                   <label>Batch / Class</label>
-                  <input required className="form-control" value={batch} onChange={e => setBatch(e.target.value)} />
+                  <select required className="form-control" value={batch} onChange={e => setBatch(e.target.value)}>
+                    <option value="Class 8">Class 8</option>
+                    <option value="Class 9">Class 9</option>
+                    <option value="Class 10">Class 10</option>
+                    <option value="Class 11">Class 11</option>
+                    <option value="Class 12">Class 12</option>
+                  </select>
                 </div>
               </div>
               <div className="form-group">
