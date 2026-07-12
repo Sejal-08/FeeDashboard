@@ -77,11 +77,11 @@ export const FeeMatrix: React.FC = () => {
         style={{ textAlign: 'center', cursor: 'pointer' }}
         onClick={() => openPaymentModal(studentId, month)}
       >
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '8px', borderRadius: '8px', transition: 'background 0.2s' }} className="hover-bg">
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '4px', borderRadius: '8px', transition: 'background 0.2s' }} className="hover-bg">
           {!record && <span style={{ color: 'var(--text-muted)' }}>-</span>}
-          {record?.status === 'paid' && <CheckCircle color="var(--accent-green)" size={20} />}
-          {record?.status === 'pending' && <Clock color="var(--accent-amber)" size={20} />}
-          {record?.status === 'overdue' && <XCircle color="var(--accent-red)" size={20} />}
+          {record?.status === 'paid' && <CheckCircle color="var(--accent-green)" className="icon-small" size={20} />}
+          {record?.status === 'pending' && <Clock color="var(--accent-amber)" className="icon-small" size={20} />}
+          {record?.status === 'overdue' && <XCircle color="var(--accent-red)" className="icon-small" size={20} />}
         </div>
       </td>
     );
@@ -109,18 +109,20 @@ export const FeeMatrix: React.FC = () => {
           <table>
             <thead>
               <tr>
-                <th style={{ position: 'sticky', left: 0, backgroundColor: 'var(--bg-card)', zIndex: 10 }}>Student</th>
+                <th style={{ position: 'sticky', left: 0, backgroundColor: 'var(--bg-card)', zIndex: 10 }} className="sticky-col">Student</th>
                 {months.map(m => (
-                  <th key={m} style={{ textAlign: 'center' }}>{format(new Date(m + '-01'), 'MMM yyyy')}</th>
+                  <th key={m} style={{ textAlign: 'center' }} className="month-label">
+                    {format(new Date(m + '-01'), 'MMM')} <span className="year">{format(new Date(m + '-01'), 'yyyy')}</span>
+                  </th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {students.map(student => (
                 <tr key={student.id}>
-                  <td style={{ position: 'sticky', left: 0, backgroundColor: 'var(--bg-card)', fontWeight: 500, zIndex: 10, borderRight: '1px solid var(--border-color)' }}>
-                    {student.name}
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{student.batch}</div>
+                  <td className="sticky-col" style={{ position: 'sticky', left: 0, backgroundColor: 'var(--bg-card)', fontWeight: 500, zIndex: 10, borderRight: '1px solid var(--border-color)' }}>
+                    <div style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{student.name}</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis' }}>{student.batch}</div>
                   </td>
                   {months.map(m => renderStatusCell(student.id, m))}
                 </tr>

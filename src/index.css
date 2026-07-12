@@ -288,7 +288,27 @@ tr:last-child td {
   }
   
   th, td {
-    padding: 12px 8px;
-    font-size: 0.85rem;
+    padding: 8px 4px;
+    font-size: 0.8rem;
+  }
+  
+  .table-container {
+    border-radius: 4px;
+  }
+  
+  .sticky-col {
+    max-width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  
+  .icon-small {
+    width: 16px;
+    height: 16px;
+  }
+  
+  .month-label .year {
+    display: none;
   }
 }
