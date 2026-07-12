@@ -16,9 +16,13 @@ export const DashboardOverview: React.FC = () => {
     .filter(r => r.status === 'paid')
     .reduce((sum, record) => sum + record.amount, 0);
 
-  const pendingAmountThisMonth = currentMonthRecords
-    .filter(r => r.status === 'pending' || r.status === 'overdue')
-    .reduce((sum, record) => sum + record.amount, 0);
+  const pendingAmountThisMonth = students.reduce((sum, student) => {
+    const record = currentMonthRecords.find(r => r.studentId === student.id);
+    if (!record || record.status !== 'paid') {
+      return sum + student.monthlyFee;
+    }
+    return sum;
+  }, 0);
 
   const recentPayments = [...feeRecords]
     .filter(r => r.status === 'paid')
