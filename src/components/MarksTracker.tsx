@@ -46,13 +46,14 @@ export const MarksTracker: React.FC = () => {
 
   const handleCreateTest = (e: React.FormEvent) => {
     e.preventDefault();
-    addTestRecord({
+    const newId = addTestRecord({
       batch: activeBatchTab,
       testName: newTestName,
       date: newTestDate,
       maxMarks: newTestMaxMarks
     });
     setNewTestName('');
+    setSelectedTestId(newId);
   };
 
   const handleSaveMarks = () => {
@@ -213,6 +214,11 @@ export const MarksTracker: React.FC = () => {
                 <div style={{ opacity: 0.7, fontSize: '0.9rem' }}>/ {test.maxMarks}</div>
               </div>
             ))
+          )}
+          {!selectedTestId && batchTests.length > 0 && (
+            <p style={{ textAlign: 'center', color: 'var(--accent-blue)', fontSize: '0.9rem', marginTop: '8px' }}>
+              ↑ Click a test above to enter marks
+            </p>
           )}
         </div>
       </div>

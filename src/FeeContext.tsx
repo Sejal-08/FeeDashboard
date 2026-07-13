@@ -14,7 +14,7 @@ interface FeeContextType extends AppState {
   updateAttendanceRecord: (record: AttendanceRecord) => void;
   deleteAttendanceRecord: (id: string) => void;
   
-  addTestRecord: (record: Omit<TestRecord, 'id'>) => void;
+  addTestRecord: (record: Omit<TestRecord, 'id'>) => string;
   deleteTestRecord: (id: string) => void;
   saveBulkMarks: (testId: string, marks: Omit<MarkRecord, 'id' | 'testId'>[]) => void;
   
@@ -137,11 +137,13 @@ export const FeeProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const addTestRecord = (record: Omit<TestRecord, 'id'>) => {
-    const newRecord = { ...record, id: crypto.randomUUID() };
+    const newId = crypto.randomUUID();
+    const newRecord = { ...record, id: newId };
     setState(prev => ({
       ...prev,
       testRecords: [...prev.testRecords, newRecord]
     }));
+    return newId;
   };
 
   const deleteTestRecord = (id: string) => {
