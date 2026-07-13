@@ -4,7 +4,7 @@ import { format, subDays, addDays } from 'date-fns';
 import { ClipboardCheck, Check, X, FileMinus, Download } from 'lucide-react';
 import { AttendanceStatus } from '../types';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 
 export const AttendanceTracker: React.FC = () => {
   const { students, attendanceRecords, addAttendanceRecord } = useFeeData();
@@ -48,7 +48,7 @@ export const AttendanceTracker: React.FC = () => {
     if (tableRows.length === 0) {
       doc.text("No students are absent today.", 14, 50);
     } else {
-      (doc as any).autoTable({
+      autoTable(doc, {
         startY: 45,
         head: [tableColumn],
         body: tableRows,

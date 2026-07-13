@@ -3,7 +3,7 @@ import { useFeeData } from '../FeeContext';
 import { format } from 'date-fns';
 import { GraduationCap, Download, Plus, Trash2 } from 'lucide-react';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 
 export const MarksTracker: React.FC = () => {
   const { students, markRecords, addMarkRecord, deleteMarkRecord } = useFeeData();
@@ -17,7 +17,6 @@ export const MarksTracker: React.FC = () => {
   // Form state
   const [studentId, setStudentId] = useState('');
   const [testName, setTestName] = useState('');
-  const [subject, setSubject] = useState('');
   const [marksObtained, setMarksObtained] = useState(0);
   const [maxMarks, setMaxMarks] = useState(100);
   const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
@@ -25,12 +24,11 @@ export const MarksTracker: React.FC = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     addMarkRecord({
-      studentId, testName, subject, marksObtained, maxMarks, date
+      studentId, testName, subject: 'Mathematics', marksObtained, maxMarks, date
     });
     setShowModal(false);
     // Reset form mostly, keep date and testName to make multiple entries easier
     setStudentId('');
-    setSubject('');
     setMarksObtained(0);
   };
 
@@ -78,7 +76,7 @@ export const MarksTracker: React.FC = () => {
         ];
       });
 
-      (doc as any).autoTable({
+      autoTable(doc, {
         startY: 65,
         head: [tableColumn],
         body: tableRows,
@@ -198,15 +196,9 @@ export const MarksTracker: React.FC = () => {
                   {filteredStudents.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                 </select>
               </div>
-              <div className="form-row">
-                <div className="form-group" style={{ flex: 1 }}>
-                  <label>Test Name</label>
-                  <input required className="form-control" placeholder="e.g. Term 1" value={testName} onChange={e => setTestName(e.target.value)} />
-                </div>
-                <div className="form-group" style={{ flex: 1 }}>
-                  <label>Subject</label>
-                  <input required className="form-control" placeholder="e.g. Maths" value={subject} onChange={e => setSubject(e.target.value)} />
-                </div>
+              <div className="form-group">
+                <label>Test Name</label>
+                <input required className="form-control" placeholder="e.g. Term 1" value={testName} onChange={e => setTestName(e.target.value)} />
               </div>
               <div className="form-row">
                 <div className="form-group" style={{ flex: 1 }}>
