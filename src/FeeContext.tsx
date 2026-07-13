@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Student, FeeRecord, AppState } from './types';
+import { Student, FeeRecord, AppState, AttendanceRecord, MarkRecord } from './types';
 
 interface FeeContextType extends AppState {
   addStudent: (student: Omit<Student, 'id'>) => void;
@@ -8,6 +8,16 @@ interface FeeContextType extends AppState {
   addFeeRecord: (record: Omit<FeeRecord, 'id'>) => void;
   updateFeeRecord: (record: FeeRecord) => void;
   deleteFeeRecord: (id: string) => void;
+  
+  // New features
+  addAttendanceRecord: (record: Omit<AttendanceRecord, 'id'>) => void;
+  updateAttendanceRecord: (record: AttendanceRecord) => void;
+  deleteAttendanceRecord: (id: string) => void;
+  
+  addMarkRecord: (record: Omit<MarkRecord, 'id'>) => void;
+  updateMarkRecord: (record: MarkRecord) => void;
+  deleteMarkRecord: (id: string) => void;
+  
   exportData: () => void;
   importData: (data: string) => void;
 }
@@ -27,15 +37,22 @@ const getInitialState = (): AppState => {
       const validStudents = (parsed.students || []).filter((s: Student) => validBatches.includes(s.batch));
       const validStudentIds = new Set(validStudents.map((s: Student) => s.id));
       
-      // Filter out fee records belonging to legacy students
+      // Filter out records belonging to legacy students
       const validFeeRecords = (parsed.feeRecords || []).filter((r: FeeRecord) => validStudentIds.has(r.studentId));
+      const validAttendance = (parsed.attendanceRecords || []).filter((r: AttendanceRecord) => validStudentIds.has(r.studentId));
+      const validMarks = (parsed.markRecords || []).filter((r: MarkRecord) => validStudentIds.has(r.studentId));
       
-      return { students: validStudents, feeRecords: validFeeRecords };
+      return { 
+        students: validStudents, 
+        feeRecords: validFeeRecords,
+        attendanceRecords: validAttendance,
+        markRecords: validMarks
+      };
     } catch (e) {
       console.error('Failed to parse local storage data', e);
     }
   }
-  return { students: [], feeRecords: [] };
+  return { students: [], feeRecords: [], attendanceRecords: [], markRecords: [] };
 };
 
 export const FeeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -62,8 +79,10 @@ export const FeeProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setState(prev => ({
       ...prev,
       students: prev.students.filter(s => s.id !== id),
-      // Also delete associated fee records
-      feeRecords: prev.feeRecords.filter(r => r.studentId !== id)
+      // Also delete associated records
+      feeRecords: prev.feeRecords.filter(r => r.studentId !== id),
+      attendanceRecords: prev.attendanceRecords.filter(r => r.studentId !== id),
+      markRecords: prev.markRecords.filter(r => r.studentId !== id)
     }));
   };
 
@@ -87,6 +106,51 @@ export const FeeProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setState(prev => ({
       ...prev,
       feeRecords: prev.feeRecords.filter(r => r.id !== id)
+    }));
+  };
+
+  const addAttendanceRecord = (record: Omit<AttendanceRecord, 'id'>) => {
+    const newRecord = { ...record, id: crypto.randomUUID() };
+    setState(prev => ({
+      ...prev,
+      // Remove any existing record for this student on this date before adding
+      attendanceRecords: [...prev.attendanceRecords.filter(r => !(r.studentId === record.studentId && r.date === record.date)), newRecord]
+    }));
+  };
+
+  const updateAttendanceRecord = (updatedRecord: AttendanceRecord) => {
+    setState(prev => ({
+      ...prev,
+      attendanceRecords: prev.attendanceRecords.map(r => r.id === updatedRecord.id ? updatedRecord : r)
+    }));
+  };
+
+  const deleteAttendanceRecord = (id: string) => {
+    setState(prev => ({
+      ...prev,
+      attendanceRecords: prev.attendanceRecords.filter(r => r.id !== id)
+    }));
+  };
+
+  const addMarkRecord = (record: Omit<MarkRecord, 'id'>) => {
+    const newRecord = { ...record, id: crypto.randomUUID() };
+    setState(prev => ({
+      ...prev,
+      markRecords: [...prev.markRecords, newRecord]
+    }));
+  };
+
+  const updateMarkRecord = (updatedRecord: MarkRecord) => {
+    setState(prev => ({
+      ...prev,
+      markRecords: prev.markRecords.map(r => r.id === updatedRecord.id ? updatedRecord : r)
+    }));
+  };
+
+  const deleteMarkRecord = (id: string) => {
+    setState(prev => ({
+      ...prev,
+      markRecords: prev.markRecords.filter(r => r.id !== id)
     }));
   };
 
@@ -122,6 +186,8 @@ export const FeeProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       ...state,
       addStudent, updateStudent, deleteStudent,
       addFeeRecord, updateFeeRecord, deleteFeeRecord,
+      addAttendanceRecord, updateAttendanceRecord, deleteAttendanceRecord,
+      addMarkRecord, updateMarkRecord, deleteMarkRecord,
       exportData, importData
     }}>
       {children}

@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutDashboard, Users, Receipt, Settings } from 'lucide-react';
+import { LayoutDashboard, Users, Receipt, Settings, ClipboardCheck, GraduationCap } from 'lucide-react';
 import Logo from '../assets/Logo.jpg.jpeg';
 
 interface LayoutProps {
@@ -13,6 +13,8 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTa
     { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={20} /> },
     { id: 'students', label: 'Students', icon: <Users size={20} /> },
     { id: 'fees', label: 'Fee Matrix', icon: <Receipt size={20} /> },
+    { id: 'attendance', label: 'Attendance', icon: <ClipboardCheck size={20} /> },
+    { id: 'marks', label: 'Marks', icon: <GraduationCap size={20} /> },
     { id: 'settings', label: 'Settings', icon: <Settings size={20} /> },
   ];
 

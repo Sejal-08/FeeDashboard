@@ -21,7 +21,28 @@ export interface FeeRecord {
   remarks?: string;
 }
 
+export type AttendanceStatus = 'present' | 'absent' | 'leave';
+
+export interface AttendanceRecord {
+  id: string;
+  studentId: string;
+  date: string; // ISO date string (YYYY-MM-DD)
+  status: AttendanceStatus;
+}
+
+export interface MarkRecord {
+  id: string;
+  studentId: string;
+  testName: string;
+  subject: string;
+  marksObtained: number;
+  maxMarks: number;
+  date: string; // ISO date string
+}
+
 export interface AppState {
   students: Student[];
   feeRecords: FeeRecord[];
+  attendanceRecords: AttendanceRecord[];
+  markRecords: MarkRecord[];
 }

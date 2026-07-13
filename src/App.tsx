@@ -4,6 +4,8 @@ import { Layout } from './components/Layout';
 import { DashboardOverview } from './components/DashboardOverview';
 import { StudentList } from './components/StudentList';
 import { FeeMatrix } from './components/FeeMatrix';
+import { AttendanceTracker } from './components/AttendanceTracker';
+import { MarksTracker } from './components/MarksTracker';
 import { Settings } from './components/Settings';
 
 function AppContent() {
@@ -17,6 +19,10 @@ function AppContent() {
         return <StudentList />;
       case 'fees':
         return <FeeMatrix />;
+      case 'attendance':
+        return <AttendanceTracker />;
+      case 'marks':
+        return <MarksTracker />;
       case 'settings':
         return <Settings />;
       default:
