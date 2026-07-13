@@ -30,19 +30,25 @@ export interface AttendanceRecord {
   status: AttendanceStatus;
 }
 
+export interface TestRecord {
+  id: string;
+  batch: string;
+  testName: string;
+  date: string;
+  maxMarks: number;
+}
+
 export interface MarkRecord {
   id: string;
+  testId: string;
   studentId: string;
-  testName: string;
-  subject: string;
   marksObtained: number;
-  maxMarks: number;
-  date: string; // ISO date string
 }
 
 export interface AppState {
   students: Student[];
   feeRecords: FeeRecord[];
   attendanceRecords: AttendanceRecord[];
+  testRecords: TestRecord[];
   markRecords: MarkRecord[];
 }

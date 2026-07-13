@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Student, FeeRecord, AppState, AttendanceRecord, MarkRecord } from './types';
+import { Student, FeeRecord, AppState, AttendanceRecord, MarkRecord, TestRecord } from './types';
 
 interface FeeContextType extends AppState {
   addStudent: (student: Omit<Student, 'id'>) => void;
@@ -14,9 +14,9 @@ interface FeeContextType extends AppState {
   updateAttendanceRecord: (record: AttendanceRecord) => void;
   deleteAttendanceRecord: (id: string) => void;
   
-  addMarkRecord: (record: Omit<MarkRecord, 'id'>) => void;
-  updateMarkRecord: (record: MarkRecord) => void;
-  deleteMarkRecord: (id: string) => void;
+  addTestRecord: (record: Omit<TestRecord, 'id'>) => void;
+  deleteTestRecord: (id: string) => void;
+  saveBulkMarks: (testId: string, marks: Omit<MarkRecord, 'id' | 'testId'>[]) => void;
   
   exportData: () => void;
   importData: (data: string) => void;
@@ -40,19 +40,23 @@ const getInitialState = (): AppState => {
       // Filter out records belonging to legacy students
       const validFeeRecords = (parsed.feeRecords || []).filter((r: FeeRecord) => validStudentIds.has(r.studentId));
       const validAttendance = (parsed.attendanceRecords || []).filter((r: AttendanceRecord) => validStudentIds.has(r.studentId));
-      const validMarks = (parsed.markRecords || []).filter((r: MarkRecord) => validStudentIds.has(r.studentId));
+      
+      const testRecords = parsed.testRecords || [];
+      // Wipe old markRecords since schema changed, start fresh or only keep if they have testId
+      const markRecords = (parsed.markRecords || []).filter((r: MarkRecord) => r.testId);
       
       return { 
         students: validStudents, 
         feeRecords: validFeeRecords,
         attendanceRecords: validAttendance,
-        markRecords: validMarks
+        testRecords,
+        markRecords
       };
     } catch (e) {
       console.error('Failed to parse local storage data', e);
     }
   }
-  return { students: [], feeRecords: [], attendanceRecords: [], markRecords: [] };
+  return { students: [], feeRecords: [], attendanceRecords: [], testRecords: [], markRecords: [] };
 };
 
 export const FeeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -132,26 +136,33 @@ export const FeeProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }));
   };
 
-  const addMarkRecord = (record: Omit<MarkRecord, 'id'>) => {
+  const addTestRecord = (record: Omit<TestRecord, 'id'>) => {
     const newRecord = { ...record, id: crypto.randomUUID() };
     setState(prev => ({
       ...prev,
-      markRecords: [...prev.markRecords, newRecord]
+      testRecords: [...prev.testRecords, newRecord]
     }));
   };
 
-  const updateMarkRecord = (updatedRecord: MarkRecord) => {
+  const deleteTestRecord = (id: string) => {
     setState(prev => ({
       ...prev,
-      markRecords: prev.markRecords.map(r => r.id === updatedRecord.id ? updatedRecord : r)
+      testRecords: prev.testRecords.filter(r => r.id !== id),
+      markRecords: prev.markRecords.filter(r => r.testId !== id)
     }));
   };
 
-  const deleteMarkRecord = (id: string) => {
-    setState(prev => ({
-      ...prev,
-      markRecords: prev.markRecords.filter(r => r.id !== id)
-    }));
+  const saveBulkMarks = (testId: string, marks: Omit<MarkRecord, 'id' | 'testId'>[]) => {
+    setState(prev => {
+      // Remove all existing marks for this test
+      const otherMarks = prev.markRecords.filter(m => m.testId !== testId);
+      // Create new mark records
+      const newMarks = marks.map(m => ({ ...m, id: crypto.randomUUID(), testId }));
+      return {
+        ...prev,
+        markRecords: [...otherMarks, ...newMarks]
+      };
+    });
   };
 
   const exportData = () => {
@@ -187,7 +198,7 @@ export const FeeProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       addStudent, updateStudent, deleteStudent,
       addFeeRecord, updateFeeRecord, deleteFeeRecord,
       addAttendanceRecord, updateAttendanceRecord, deleteAttendanceRecord,
-      addMarkRecord, updateMarkRecord, deleteMarkRecord,
+      addTestRecord, deleteTestRecord, saveBulkMarks,
       exportData, importData
     }}>
       {children}

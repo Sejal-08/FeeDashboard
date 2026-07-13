@@ -1,49 +1,104 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useFeeData } from '../FeeContext';
 import { format } from 'date-fns';
-import { GraduationCap, Download, Plus, Trash2 } from 'lucide-react';
+import { GraduationCap, Download } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
 export const MarksTracker: React.FC = () => {
-  const { students, markRecords, addMarkRecord, deleteMarkRecord } = useFeeData();
+  const { students, testRecords, markRecords, addTestRecord, deleteTestRecord, saveBulkMarks } = useFeeData();
   
   const [activeBatchTab, setActiveBatchTab] = useState<string>('Class 10');
   const batches = ['Class 8', 'Class 9', 'Class 10', 'Class 11', 'Class 12'];
   const filteredStudents = students.filter(s => s.batch === activeBatchTab);
 
-  const [showModal, setShowModal] = useState(false);
-  
-  // Form state
-  const [studentId, setStudentId] = useState('');
-  const [testName, setTestName] = useState('');
-  const [marksObtained, setMarksObtained] = useState(0);
-  const [maxMarks, setMaxMarks] = useState(100);
-  const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const batchTests = testRecords.filter(t => t.batch === activeBatchTab).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Step 1: New test state
+  const [newTestName, setNewTestName] = useState('');
+  const [newTestDate, setNewTestDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [newTestMaxMarks, setNewTestMaxMarks] = useState(100);
+
+  // Step 2 & 3: Selected test and marks state
+  const [selectedTestId, setSelectedTestId] = useState<string | null>(null);
+  const [marksMap, setMarksMap] = useState<Record<string, string>>({});
+
+  const selectedTest = batchTests.find(t => t.id === selectedTestId);
+
+  // Initialize marks map when a test is selected
+  useEffect(() => {
+    if (selectedTestId) {
+      const existingMarks = markRecords.filter(m => m.testId === selectedTestId);
+      const newMap: Record<string, string> = {};
+      existingMarks.forEach(m => {
+        newMap[m.studentId] = m.marksObtained.toString();
+      });
+      setMarksMap(newMap);
+    } else {
+      setMarksMap({});
+    }
+  }, [selectedTestId, markRecords]);
+
+  // If batch changes, deselect test
+  useEffect(() => {
+    setSelectedTestId(null);
+  }, [activeBatchTab]);
+
+  const handleCreateTest = (e: React.FormEvent) => {
     e.preventDefault();
-    addMarkRecord({
-      studentId, testName, subject: 'Mathematics', marksObtained, maxMarks, date
+    addTestRecord({
+      batch: activeBatchTab,
+      testName: newTestName,
+      date: newTestDate,
+      maxMarks: newTestMaxMarks
     });
-    setShowModal(false);
-    // Reset form mostly, keep date and testName to make multiple entries easier
-    setStudentId('');
-    setMarksObtained(0);
+    setNewTestName('');
   };
 
-  const openAddModal = () => {
-    if (filteredStudents.length > 0) {
-      setStudentId(filteredStudents[0].id);
+  const handleSaveMarks = () => {
+    if (!selectedTestId) return;
+    const marksArray = Object.entries(marksMap)
+      .filter(([_, value]) => value !== '')
+      .map(([studentId, value]) => ({
+        studentId,
+        marksObtained: Number(value)
+      }));
+    saveBulkMarks(selectedTestId, marksArray);
+    alert('Marks saved successfully!');
+  };
+
+  const handleDeleteTest = () => {
+    if (!selectedTestId) return;
+    if (confirm('Are you sure you want to delete this test and all its marks?')) {
+      deleteTestRecord(selectedTestId);
+      setSelectedTestId(null);
     }
-    setShowModal(true);
+  };
+
+  const handleMarkChange = (studentId: string, value: string) => {
+    setMarksMap(prev => ({
+      ...prev,
+      [studentId]: value
+    }));
   };
 
   const downloadReportCard = (targetStudentId: string) => {
     const student = students.find(s => s.id === targetStudentId);
     if (!student) return;
 
-    const studentMarks = markRecords.filter(m => m.studentId === targetStudentId);
+    // Get all tests for this batch
+    const studentTests = testRecords.filter(t => t.batch === student.batch);
+    
+    // Build marks for this student
+    const studentMarksData = studentTests.map(test => {
+      const markRec = markRecords.find(m => m.testId === test.id && m.studentId === targetStudentId);
+      return {
+        testName: test.testName,
+        date: test.date,
+        maxMarks: test.maxMarks,
+        marksObtained: markRec ? markRec.marksObtained : null
+      };
+    }).filter(d => d.marksObtained !== null);
     
     const doc = new jsPDF();
     
@@ -60,17 +115,17 @@ export const MarksTracker: React.FC = () => {
     doc.text(`Class/Batch: ${student.batch}`, 14, 52);
     doc.text(`Date Generated: ${format(new Date(), 'dd MMM yyyy')}`, 14, 59);
 
-    if (studentMarks.length === 0) {
+    if (studentMarksData.length === 0) {
       doc.text("No marks recorded yet.", 14, 75);
     } else {
       const tableColumn = ["Date", "Test Name", "Subject", "Marks Obtained", "Max Marks", "Percentage"];
-      const tableRows = studentMarks.map(m => {
-        const percentage = ((m.marksObtained / m.maxMarks) * 100).toFixed(1) + '%';
+      const tableRows = studentMarksData.map(m => {
+        const percentage = ((m.marksObtained! / m.maxMarks) * 100).toFixed(1) + '%';
         return [
           format(new Date(m.date), 'dd MMM yyyy'),
           m.testName,
-          m.subject,
-          m.marksObtained.toString(),
+          'Mathematics', // Hardcoded subject
+          m.marksObtained!.toString(),
           m.maxMarks.toString(),
           percentage
         ];
@@ -86,21 +141,12 @@ export const MarksTracker: React.FC = () => {
     doc.save(`${student.name.replace(/\s+/g, '_')}_ReportCard.pdf`);
   };
 
-  // Filter marks for the current active batch
-  const batchStudentIds = new Set(filteredStudents.map(s => s.id));
-  const currentBatchMarks = markRecords
-    .filter(m => batchStudentIds.has(m.studentId))
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h1 style={{ margin: 0, fontSize: '1.8rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
           <GraduationCap /> Marks & Reports
         </h1>
-        <button className="btn btn-primary" onClick={openAddModal}>
-          <Plus size={18} /> Add Marks
-        </button>
       </div>
 
       <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '8px' }}>
@@ -116,112 +162,138 @@ export const MarksTracker: React.FC = () => {
         ))}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
-        <div className="card table-container">
-          <h3 style={{ marginTop: 0 }}>Recent Marks Entry ({activeBatchTab})</h3>
-          {currentBatchMarks.length === 0 ? (
-            <p style={{ color: 'var(--text-muted)' }}>No marks recorded for this class yet.</p>
-          ) : (
-            <table>
-              <thead>
-                <tr>
-                  <th>Student</th>
-                  <th>Test</th>
-                  <th>Subject</th>
-                  <th>Score</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {currentBatchMarks.slice(0, 10).map(mark => {
-                  const student = students.find(s => s.id === mark.studentId);
-                  return (
-                    <tr key={mark.id}>
-                      <td style={{ fontWeight: 500 }}>{student?.name}</td>
-                      <td>{mark.testName}</td>
-                      <td>{mark.subject}</td>
-                      <td style={{ fontWeight: 600, color: 'var(--accent-green)' }}>{mark.marksObtained}/{mark.maxMarks}</td>
-                      <td>
-                        <button className="btn" style={{ padding: '4px', color: 'var(--accent-red)' }} onClick={() => {
-                          if (confirm('Delete this record?')) deleteMarkRecord(mark.id);
-                        }}>
-                          <Trash2 size={16} />
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          )}
+      {/* Step 1: New Test */}
+      <div className="card" style={{ padding: '0', overflow: 'hidden' }}>
+        <div style={{ padding: '16px 20px', background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <span style={{ background: '#fef3c7', color: '#92400e', padding: '4px 8px', borderRadius: '4px', fontWeight: 'bold', fontSize: '0.85rem' }}>01</span>
+          <h3 style={{ margin: 0, color: 'var(--accent-blue)' }}>New test — {activeBatchTab}</h3>
         </div>
+        <div style={{ padding: '20px' }}>
+          <form onSubmit={handleCreateTest} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <input required className="form-control" placeholder="Test name, e.g. Algebra Unit Test" value={newTestName} onChange={e => setNewTestName(e.target.value)} />
+            <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+              <input required type="date" className="form-control" style={{ flex: 2, minWidth: '150px' }} value={newTestDate} onChange={e => setNewTestDate(e.target.value)} />
+              <input required type="number" min="1" className="form-control" placeholder="Max marks" style={{ flex: 1, minWidth: '100px' }} value={newTestMaxMarks} onChange={e => setNewTestMaxMarks(Number(e.target.value))} />
+            </div>
+            <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '12px' }}>Create test</button>
+          </form>
+        </div>
+      </div>
 
-        <div className="card table-container">
-          <h3 style={{ marginTop: 0 }}>Generate Report Cards</h3>
-          {filteredStudents.length === 0 ? (
-             <p style={{ color: 'var(--text-muted)' }}>No students in this class.</p>
+      {/* Step 2: Existing Tests */}
+      <div className="card" style={{ padding: '0', overflow: 'hidden' }}>
+        <div style={{ padding: '16px 20px', background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <span style={{ background: '#fef3c7', color: '#92400e', padding: '4px 8px', borderRadius: '4px', fontWeight: 'bold', fontSize: '0.85rem' }}>02</span>
+          <h3 style={{ margin: 0, color: 'var(--accent-blue)' }}>Existing tests</h3>
+        </div>
+        <div style={{ padding: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {batchTests.length === 0 ? (
+            <p style={{ color: 'var(--text-muted)', margin: '12px', textAlign: 'center' }}>No tests created yet.</p>
           ) : (
-            <table>
-              <thead>
-                <tr>
-                  <th>Student Name</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredStudents.map(student => (
-                  <tr key={student.id}>
-                    <td style={{ fontWeight: 500 }}>{student.name}</td>
-                    <td>
-                      <button className="btn btn-primary" style={{ padding: '6px 12px' }} onClick={() => downloadReportCard(student.id)}>
-                        <Download size={14} /> PDF
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            batchTests.map(test => (
+              <div 
+                key={test.id} 
+                onClick={() => setSelectedTestId(test.id)}
+                style={{ 
+                  padding: '16px', 
+                  background: selectedTestId === test.id ? '#fef3c7' : 'rgba(255,255,255,0.03)', 
+                  color: selectedTestId === test.id ? '#1e293b' : 'inherit',
+                  borderRadius: '8px', 
+                  cursor: 'pointer',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  border: selectedTestId === test.id ? '1px solid #fcd34d' : '1px solid transparent'
+                }}
+              >
+                <div>
+                  <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>{test.testName}</div>
+                  <div style={{ fontSize: '0.85rem', opacity: 0.8 }}>{test.date}</div>
+                </div>
+                <div style={{ opacity: 0.7, fontSize: '0.9rem' }}>/ {test.maxMarks}</div>
+              </div>
+            ))
           )}
         </div>
       </div>
 
-      {showModal && (
-        <div className="modal-overlay" onClick={(e) => { if(e.target === e.currentTarget) setShowModal(false)}}>
-          <div className="modal-content">
-            <h2 style={{ marginTop: 0, marginBottom: '24px' }}>Add Test Marks</h2>
-            <form onSubmit={handleSubmit}>
-              <div className="form-group">
-                <label>Student</label>
-                <select required className="form-control" value={studentId} onChange={e => setStudentId(e.target.value)}>
-                  {filteredStudents.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                </select>
-              </div>
-              <div className="form-group">
-                <label>Test Name</label>
-                <input required className="form-control" placeholder="e.g. Term 1" value={testName} onChange={e => setTestName(e.target.value)} />
-              </div>
-              <div className="form-row">
-                <div className="form-group" style={{ flex: 1 }}>
-                  <label>Marks Obtained</label>
-                  <input required type="number" min="0" step="0.5" className="form-control" value={marksObtained} onChange={e => setMarksObtained(Number(e.target.value))} />
-                </div>
-                <div className="form-group" style={{ flex: 1 }}>
-                  <label>Max Marks</label>
-                  <input required type="number" min="1" className="form-control" value={maxMarks} onChange={e => setMaxMarks(Number(e.target.value))} />
-                </div>
-              </div>
-              <div className="form-group">
-                <label>Date of Test</label>
-                <input required type="date" className="form-control" value={date} onChange={e => setDate(e.target.value)} />
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' }}>
-                <button type="button" className="btn" onClick={() => setShowModal(false)}>Cancel</button>
-                <button type="submit" className="btn btn-primary">Save Marks</button>
-              </div>
-            </form>
+      {/* Step 3: Enter Marks */}
+      {selectedTest && (
+        <div className="card" style={{ padding: '0', overflow: 'hidden' }}>
+          <div style={{ padding: '16px 20px', background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <span style={{ background: '#fef3c7', color: '#92400e', padding: '4px 8px', borderRadius: '4px', fontWeight: 'bold', fontSize: '0.85rem' }}>03</span>
+            <h3 style={{ margin: 0, color: 'var(--accent-blue)' }}>Enter marks — {selectedTest.testName}</h3>
+          </div>
+          <div className="table-container" style={{ border: 'none' }}>
+            <table style={{ margin: 0 }}>
+              <thead>
+                <tr>
+                  <th style={{ color: 'var(--text-muted)', fontSize: '0.75rem', letterSpacing: '1px' }}>STUDENT</th>
+                  <th style={{ color: 'var(--text-muted)', fontSize: '0.75rem', letterSpacing: '1px', textAlign: 'right' }}>MARKS (/{selectedTest.maxMarks})</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredStudents.length === 0 ? (
+                  <tr><td colSpan={2} style={{ textAlign: 'center', color: 'var(--text-muted)' }}>No students in this class.</td></tr>
+                ) : (
+                  filteredStudents.map(student => (
+                    <tr key={student.id}>
+                      <td style={{ fontWeight: 500 }}>{student.name}</td>
+                      <td style={{ textAlign: 'right' }}>
+                        <input 
+                          type="number" 
+                          className="form-control" 
+                          style={{ width: '80px', display: 'inline-block', textAlign: 'center' }} 
+                          min="0"
+                          max={selectedTest.maxMarks}
+                          value={marksMap[student.id] || ''} 
+                          onChange={(e) => handleMarkChange(student.id, e.target.value)}
+                        />
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+          <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '12px', background: 'rgba(255,255,255,0.01)' }}>
+            <button className="btn btn-primary" style={{ padding: '12px' }} onClick={handleSaveMarks}>Save marks</button>
+            <button className="btn" style={{ padding: '12px', background: 'transparent', color: 'var(--accent-red)', border: 'none' }} onClick={handleDeleteTest}>Delete this test</button>
           </div>
         </div>
       )}
+
+      {/* Generate Reports Section */}
+      <div className="card table-container">
+        <h3 style={{ marginTop: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Download size={20} color="var(--accent-blue)"/> Generate Report Cards
+        </h3>
+        {filteredStudents.length === 0 ? (
+           <p style={{ color: 'var(--text-muted)' }}>No students in this class.</p>
+        ) : (
+          <table>
+            <thead>
+              <tr>
+                <th>Student Name</th>
+                <th style={{ textAlign: 'right' }}>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredStudents.map(student => (
+                <tr key={student.id}>
+                  <td style={{ fontWeight: 500 }}>{student.name}</td>
+                  <td style={{ textAlign: 'right' }}>
+                    <button className="btn btn-primary" style={{ padding: '6px 12px' }} onClick={() => downloadReportCard(student.id)}>
+                      <Download size={14} /> PDF
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+
     </div>
   );
 };
