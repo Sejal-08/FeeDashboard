@@ -229,6 +229,42 @@ body {
   box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.1);
 }
 
+/* Batch Pills */
+.batch-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px 6px 6px;
+  border-radius: 99px;
+  background: #ffffff;
+  color: var(--text-main);
+  border: 1px solid var(--border-color);
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.batch-pill.active {
+  background: var(--accent-blue);
+  color: #ffffff;
+}
+.batch-pill-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  background: #f1f5f9;
+  color: var(--text-main);
+}
+.batch-pill.active .batch-pill-icon {
+  background: var(--accent-gold);
+  color: var(--bg-dark);
+}
+
 /* Badges */
 .badge {
   padding: 4px 8px;
@@ -336,6 +372,16 @@ tr:last-child td {
   th, td {
     padding: 12px 8px;
     font-size: 0.85rem;
+  }
+  .batch-pill {
+    padding: 4px 12px 4px 4px;
+    font-size: 0.8rem;
+    gap: 6px;
+  }
+  .batch-pill-icon {
+    width: 24px;
+    height: 24px;
+    font-size: 0.75rem;
   }
 }
 

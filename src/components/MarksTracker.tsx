@@ -93,23 +93,9 @@ export const MarksTracker: React.FC = () => {
             <button 
               key={b}
               onClick={() => setActiveBatchTab(b)}
-              style={{
-                display: 'flex', alignItems: 'center', gap: '8px',
-                padding: '6px 16px 6px 6px', borderRadius: '99px',
-                background: isActive ? 'var(--accent-blue)' : '#ffffff',
-                color: isActive ? '#ffffff' : 'var(--text-main)',
-                border: '1px solid var(--border-color)',
-                cursor: 'pointer', fontWeight: 600, fontSize: '0.95rem',
-                transition: 'all 0.2s', whiteSpace: 'nowrap'
-              }}
+              className={`batch-pill ${isActive ? 'active' : ''}`}
             >
-              <div style={{
-                background: isActive ? 'var(--accent-gold)' : '#f1f5f9',
-                color: isActive ? 'var(--bg-dark)' : 'var(--text-main)',
-                width: '32px', height: '32px', borderRadius: '50%',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: '0.9rem'
-              }}>
+              <div className="batch-pill-icon">
                 {num}
               </div>
               {b} {isActive ? 'batch' : ''}
