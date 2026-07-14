@@ -192,50 +192,65 @@ export const MarksTracker: React.FC = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h1 style={{ margin: 0, fontSize: '1.8rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <GraduationCap /> Marks & Reports
-        </h1>
-      </div>
-
-      <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '8px' }}>
-        {batches.map(b => (
-          <button 
-            key={b}
-            onClick={() => setActiveBatchTab(b)}
-            className={`btn ${activeBatchTab === b ? 'btn-primary' : ''}`}
-            style={{ whiteSpace: 'nowrap' }}
-          >
-            {b}
-          </button>
-        ))}
+      
+      {/* Batch selector */}
+      <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '8px' }}>
+        {batches.map((b, idx) => {
+          const isActive = activeBatchTab === b;
+          const numMatch = b.match(/\d+/);
+          const num = numMatch ? numMatch[0] : (idx + 1);
+          return (
+            <button 
+              key={b}
+              onClick={() => setActiveBatchTab(b)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '8px',
+                padding: '6px 16px 6px 6px', borderRadius: '99px',
+                background: isActive ? 'var(--accent-blue)' : '#ffffff',
+                color: isActive ? '#ffffff' : 'var(--text-main)',
+                border: '1px solid var(--border-color)',
+                cursor: 'pointer', fontWeight: 600, fontSize: '0.95rem',
+                transition: 'all 0.2s', whiteSpace: 'nowrap'
+              }}
+            >
+              <div style={{
+                background: isActive ? 'var(--accent-gold)' : '#f1f5f9',
+                color: isActive ? 'var(--bg-dark)' : 'var(--text-main)',
+                width: '32px', height: '32px', borderRadius: '50%',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: '0.9rem'
+              }}>
+                {num}
+              </div>
+              {b} {isActive ? 'batch' : ''}
+            </button>
+          )
+        })}
       </div>
 
       {/* Step 1: New Test */}
-      <div className="card" style={{ padding: '0', overflow: 'hidden' }}>
-        <div style={{ padding: '16px 20px', background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <span style={{ background: '#fef3c7', color: '#92400e', padding: '4px 8px', borderRadius: '4px', fontWeight: 'bold', fontSize: '0.85rem' }}>01</span>
-          <h3 style={{ margin: 0, color: 'var(--accent-blue)' }}>New test — {activeBatchTab}</h3>
+      <div className="card">
+        <div className="section-header">
+          <span className="section-badge">01</span>
+          <h3 className="section-title">New test — {activeBatchTab}</h3>
         </div>
-        <div style={{ padding: '20px' }}>
-          <form onSubmit={handleCreateTest} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <input required className="form-control" placeholder="Test name, e.g. Algebra Unit Test" value={newTestName} onChange={e => setNewTestName(e.target.value)} />
-            <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
-              <input required type="date" className="form-control" style={{ flex: 2, minWidth: '150px' }} value={newTestDate} onChange={e => setNewTestDate(e.target.value)} />
-              <input required type="number" min="1" className="form-control" placeholder="Max marks" style={{ flex: 1, minWidth: '100px' }} value={newTestMaxMarks} onChange={e => setNewTestMaxMarks(Number(e.target.value))} />
-            </div>
-            <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '12px' }}>Create test</button>
-          </form>
-        </div>
+        <form onSubmit={handleCreateTest} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <input required className="form-control" placeholder="Test name, e.g. Algebra Unit Test" value={newTestName} onChange={e => setNewTestName(e.target.value)} />
+          <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+            <input required type="date" className="form-control" style={{ flex: 2, minWidth: '150px' }} value={newTestDate} onChange={e => setNewTestDate(e.target.value)} />
+            <input required type="number" min="1" className="form-control" placeholder="Max marks" style={{ flex: 1, minWidth: '100px' }} value={newTestMaxMarks} onChange={e => setNewTestMaxMarks(Number(e.target.value))} />
+          </div>
+          <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '12px' }}>Create test</button>
+        </form>
       </div>
 
       {/* Step 2: Existing Tests */}
-      <div className="card" style={{ padding: '0', overflow: 'hidden' }}>
-        <div style={{ padding: '16px 20px', background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <span style={{ background: '#fef3c7', color: '#92400e', padding: '4px 8px', borderRadius: '4px', fontWeight: 'bold', fontSize: '0.85rem' }}>02</span>
-          <h3 style={{ margin: 0, color: 'var(--accent-blue)' }}>Existing tests</h3>
+      <div className="card">
+        <div className="section-header">
+          <span className="section-badge">02</span>
+          <h3 className="section-title">Existing tests</h3>
         </div>
-        <div style={{ padding: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           {batchTests.length === 0 ? (
             <p style={{ color: 'var(--text-muted)', margin: '12px', textAlign: 'center' }}>No tests created yet.</p>
           ) : (
@@ -245,26 +260,27 @@ export const MarksTracker: React.FC = () => {
                 onClick={() => setSelectedTestId(test.id)}
                 style={{ 
                   padding: '16px', 
-                  background: selectedTestId === test.id ? '#fef3c7' : 'rgba(255,255,255,0.03)', 
-                  color: selectedTestId === test.id ? '#1e293b' : 'inherit',
+                  background: selectedTestId === test.id ? 'var(--accent-gold-light)' : 'rgba(0,0,0,0.02)', 
+                  color: selectedTestId === test.id ? 'var(--text-main)' : 'var(--text-muted)',
                   borderRadius: '8px', 
                   cursor: 'pointer',
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center',
-                  border: selectedTestId === test.id ? '1px solid #fcd34d' : '1px solid transparent'
+                  border: selectedTestId === test.id ? '1px solid var(--accent-gold)' : '1px solid transparent',
+                  fontWeight: selectedTestId === test.id ? 600 : 400
                 }}
               >
                 <div>
-                  <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>{test.testName}</div>
-                  <div style={{ fontSize: '0.85rem', opacity: 0.8 }}>{test.date}</div>
+                  <div style={{ marginBottom: '4px' }}>{test.testName}</div>
+                  <div style={{ fontSize: '0.85rem' }}>{test.date}</div>
                 </div>
-                <div style={{ opacity: 0.7, fontSize: '0.9rem' }}>/ {test.maxMarks}</div>
+                <div style={{ fontSize: '0.9rem' }}>/ {test.maxMarks}</div>
               </div>
             ))
           )}
           {!selectedTestId && batchTests.length > 0 && (
-            <p style={{ textAlign: 'center', color: 'var(--accent-blue)', fontSize: '0.9rem', marginTop: '8px' }}>
+            <p style={{ textAlign: 'center', color: 'var(--accent-gold)', fontSize: '0.9rem', marginTop: '8px' }}>
               ↑ Click a test above to enter marks
             </p>
           )}
@@ -273,12 +289,12 @@ export const MarksTracker: React.FC = () => {
 
       {/* Step 3: Enter Marks */}
       {selectedTest && (
-        <div className="card" style={{ padding: '0', overflow: 'hidden' }}>
-          <div style={{ padding: '16px 20px', background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <span style={{ background: '#fef3c7', color: '#92400e', padding: '4px 8px', borderRadius: '4px', fontWeight: 'bold', fontSize: '0.85rem' }}>03</span>
-            <h3 style={{ margin: 0, color: 'var(--accent-blue)' }}>Enter marks — {selectedTest.testName}</h3>
+        <div className="card">
+          <div className="section-header">
+            <span className="section-badge">03</span>
+            <h3 className="section-title">Enter marks — {selectedTest.testName}</h3>
           </div>
-          <div className="table-container" style={{ border: 'none' }}>
+          <div className="table-container" style={{ border: 'none', marginBottom: '24px' }}>
             <table style={{ margin: 0 }}>
               <thead>
                 <tr>
@@ -310,27 +326,29 @@ export const MarksTracker: React.FC = () => {
               </tbody>
             </table>
           </div>
-          <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '12px', background: 'rgba(255,255,255,0.01)' }}>
-            <button className="btn btn-primary" style={{ padding: '12px' }} onClick={handleSaveMarks}>Save marks</button>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <button className="btn btn-primary" style={{ padding: '16px' }} onClick={handleSaveMarks}>Save marks for {selectedTest.testName}</button>
             <button 
-              className="btn" 
-              style={{ padding: '12px', background: '#e2e8f0', color: '#1e293b', border: 'none', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }} 
+              className="btn btn-outline" 
+              style={{ padding: '16px' }} 
               onClick={downloadTestReport}
             >
               <Download size={18} /> Download Test Report
             </button>
-            <button className="btn" style={{ padding: '12px', background: 'transparent', color: 'var(--accent-red)', border: 'none' }} onClick={handleDeleteTest}>Delete this test</button>
+            <button className="btn" style={{ padding: '16px', background: 'transparent', color: 'var(--accent-red)', border: 'none' }} onClick={handleDeleteTest}>Delete this test</button>
           </div>
         </div>
       )}
 
       {/* Generate Reports Section */}
-      <div className="card table-container">
-        <h3 style={{ marginTop: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Download size={20} color="var(--accent-blue)"/> Generate Report Cards
-        </h3>
+      <div className="card">
+        <div className="section-header">
+          <span className="section-badge">04</span>
+          <h3 className="section-title">Generate Report Cards</h3>
+        </div>
+        <div className="table-container" style={{ border: 'none' }}>
         {filteredStudents.length === 0 ? (
-           <p style={{ color: 'var(--text-muted)' }}>No students in this class.</p>
+           <p style={{ color: 'var(--text-muted)', margin: '16px' }}>No students in this class.</p>
         ) : (
           <table>
             <thead>
@@ -353,8 +371,8 @@ export const MarksTracker: React.FC = () => {
             </tbody>
           </table>
         )}
+        </div>
       </div>
-
     </div>
   );
 };

@@ -31,7 +31,10 @@ export const DashboardOverview: React.FC = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-      <h1 style={{ margin: 0, fontSize: '1.8rem' }}>Dashboard Overview</h1>
+      <div className="section-header" style={{ marginBottom: 0 }}>
+        <span className="section-badge">01</span>
+        <h3 className="section-title">Dashboard Overview</h3>
+      </div>
       
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '24px' }}>
         <div className="card metric-card">
@@ -66,9 +69,10 @@ export const DashboardOverview: React.FC = () => {
       </div>
 
       <div className="card" style={{ marginTop: '16px' }}>
-        <h3 style={{ marginTop: 0, marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <TrendingUp size={20} color="var(--accent-blue)" /> Recent Payments
-        </h3>
+        <div className="section-header">
+          <span className="section-badge">02</span>
+          <h3 className="section-title">Recent Payments</h3>
+        </div>
         
         {recentPayments.length === 0 ? (
           <p style={{ color: 'var(--text-muted)' }}>No recent payments recorded.</p>

@@ -29,12 +29,16 @@ export const Settings: React.FC = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', maxWidth: '800px' }}>
-      <h1 style={{ margin: 0, fontSize: '1.8rem' }}>Settings & Data Management</h1>
+      <div className="section-header" style={{ marginBottom: 0 }}>
+        <span className="section-badge">01</span>
+        <h3 className="section-title">Settings & Data Management</h3>
+      </div>
       
       <div className="card">
-        <h2 style={{ marginTop: 0, fontSize: '1.25rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <ShieldAlert color="var(--accent-amber)" /> Data Backup & Restore
-        </h2>
+        <div className="section-header">
+          <span className="section-badge" style={{ background: 'var(--accent-amber)', color: 'var(--bg-dark)' }}>!</span>
+          <h3 className="section-title">Data Backup & Restore</h3>
+        </div>
         <p style={{ color: 'var(--text-muted)', lineHeight: '1.6' }}>
           All your student and fee records are securely saved directly in this browser (Local Storage). This means your data is completely free and private.
           <br /><br />
