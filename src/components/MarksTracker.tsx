@@ -142,6 +142,54 @@ export const MarksTracker: React.FC = () => {
     doc.save(`${student.name.replace(/\s+/g, '_')}_ReportCard.pdf`);
   };
 
+  const downloadTestReport = () => {
+    if (!selectedTestId) return;
+    const test = batchTests.find(t => t.id === selectedTestId);
+    if (!test) return;
+
+    const doc = new jsPDF();
+    
+    // Header
+    doc.setFontSize(22);
+    doc.text('Tarun Classes Of Mathematics', 105, 20, { align: 'center' });
+    
+    doc.setFontSize(14);
+    doc.text(`Test Report: ${test.testName}`, 105, 30, { align: 'center' });
+    
+    // Test Info
+    doc.setFontSize(12);
+    doc.text(`Class/Batch: ${test.batch}`, 14, 45);
+    doc.text(`Date: ${format(new Date(test.date), 'dd MMM yyyy')}`, 14, 52);
+    doc.text(`Max Marks: ${test.maxMarks}`, 14, 59);
+
+    const testMarks = markRecords.filter(m => m.testId === selectedTestId);
+    
+    if (filteredStudents.length === 0) {
+      doc.text("No students in this batch.", 14, 75);
+    } else {
+      const tableColumn = ["S.No", "Student Name", "Marks Obtained", "Percentage"];
+      const tableRows = filteredStudents.map((student, index) => {
+        const markRec = testMarks.find(m => m.studentId === student.id);
+        const marksObtained = markRec ? markRec.marksObtained : null;
+        const percentage = marksObtained !== null ? ((marksObtained / test.maxMarks) * 100).toFixed(1) + '%' : 'N/A';
+        return [
+          (index + 1).toString(),
+          student.name,
+          marksObtained !== null ? marksObtained.toString() : 'Not Entered',
+          percentage
+        ];
+      });
+
+      autoTable(doc, {
+        startY: 65,
+        head: [tableColumn],
+        body: tableRows,
+      });
+    }
+
+    doc.save(`${test.testName.replace(/\s+/g, '_')}_Report.pdf`);
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -264,6 +312,13 @@ export const MarksTracker: React.FC = () => {
           </div>
           <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '12px', background: 'rgba(255,255,255,0.01)' }}>
             <button className="btn btn-primary" style={{ padding: '12px' }} onClick={handleSaveMarks}>Save marks</button>
+            <button 
+              className="btn" 
+              style={{ padding: '12px', background: '#e2e8f0', color: '#1e293b', border: 'none', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }} 
+              onClick={downloadTestReport}
+            >
+              <Download size={18} /> Download Test Report
+            </button>
             <button className="btn" style={{ padding: '12px', background: 'transparent', color: 'var(--accent-red)', border: 'none' }} onClick={handleDeleteTest}>Delete this test</button>
           </div>
         </div>
