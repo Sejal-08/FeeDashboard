@@ -1,6 +1,6 @@
 import React from 'react';
 import { useFeeData } from '../FeeContext';
-import { IndianRupee, Users, TrendingUp, AlertCircle, Trash2 } from 'lucide-react';
+import { IndianRupee, Users, AlertCircle, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 
 export const DashboardOverview: React.FC = () => {

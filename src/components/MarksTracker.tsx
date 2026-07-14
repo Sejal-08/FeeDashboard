@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useFeeData } from '../FeeContext';
 import { format } from 'date-fns';
-import { GraduationCap, Download } from 'lucide-react';
+import { Download } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 

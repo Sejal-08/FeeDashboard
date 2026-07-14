@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 import { useFeeData } from '../FeeContext';
-import { Download, Upload, ShieldAlert } from 'lucide-react';
+import { Download, Upload } from 'lucide-react';
 
 export const Settings: React.FC = () => {
   const { exportData, importData } = useFeeData();
