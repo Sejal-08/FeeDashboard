@@ -95,10 +95,10 @@ export const FeeMatrix: React.FC = () => {
       <div className="section-header" style={{ marginBottom: 0 }}>
         <span className="section-badge">01</span>
         <h3 className="section-title">Fee Tracking Matrix</h3>
-        <div style={{ display: 'flex', gap: '12px', marginLeft: 'auto' }}>
-          <button className="btn" onClick={() => setBaseDate(subMonths(baseDate, 1))}>&larr; Previous</button>
-          <button className="btn btn-primary" onClick={() => setBaseDate(new Date())}>Current</button>
-          <button className="btn" onClick={() => setBaseDate(addMonths(baseDate, 1))}>Next &rarr;</button>
+        <div style={{ display: 'flex', gap: '8px', marginLeft: 'auto' }}>
+          <button className="btn btn-sm" onClick={() => setBaseDate(subMonths(baseDate, 1))}>&larr; Prev</button>
+          <button className="btn btn-primary btn-sm" onClick={() => setBaseDate(new Date())}>Current</button>
+          <button className="btn btn-sm" onClick={() => setBaseDate(addMonths(baseDate, 1))}>Next &rarr;</button>
         </div>
       </div>
 
