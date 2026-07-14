@@ -3,8 +3,6 @@ import { useFeeData } from '../FeeContext';
 import { format, subDays, addDays } from 'date-fns';
 import { Calendar, X } from 'lucide-react';
 import { AttendanceStatus } from '../types';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
 
 export const AttendanceTracker: React.FC = () => {
   const { students, attendanceRecords, addAttendanceRecord } = useFeeData();
@@ -27,35 +25,6 @@ export const AttendanceTracker: React.FC = () => {
   const getStatus = (studentId: string) => {
     const record = attendanceRecords.find(r => r.studentId === studentId && r.date === dateStr);
     return record?.status;
-  };
-
-  const downloadAbsentRecord = () => {
-    const absentRecords = filteredStudents.filter(s => getStatus(s.id) === 'absent');
-    
-    const doc = new jsPDF();
-    doc.setFontSize(18);
-    doc.text('Tarun Classes Of Mathematics', 14, 22);
-    
-    doc.setFontSize(14);
-    doc.text(`Absent Record - ${activeBatchTab}`, 14, 32);
-    
-    doc.setFontSize(11);
-    doc.text(`Date: ${format(selectedDate, 'dd MMM yyyy')}`, 14, 40);
-
-    const tableColumn = ["Student Name", "Status"];
-    const tableRows = absentRecords.map(student => [student.name, "Absent"]);
-
-    if (tableRows.length === 0) {
-      doc.text("No students are absent today.", 14, 50);
-    } else {
-      autoTable(doc, {
-        startY: 45,
-        head: [tableColumn],
-        body: tableRows,
-      });
-    }
-
-    doc.save(`Absent_Record_${activeBatchTab}_${dateStr}.pdf`);
   };
 
   const presentCount = filteredStudents.filter(s => getStatus(s.id) === 'present').length;
@@ -201,9 +170,6 @@ export const AttendanceTracker: React.FC = () => {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <button className="btn btn-primary" style={{ width: '100%', padding: '16px', fontSize: '1rem', borderRadius: '8px' }}>
             Save attendance for {dateStr}
-          </button>
-          <button className="btn btn-outline" style={{ width: '100%', padding: '16px', fontSize: '1rem', borderRadius: '8px' }} onClick={downloadAbsentRecord}>
-            Download absent list (PDF)
           </button>
         </div>
 

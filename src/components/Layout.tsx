@@ -15,6 +15,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTa
     { id: 'fees', label: 'Fees' },
     { id: 'attendance', label: 'Attendance' },
     { id: 'marks', label: 'Marks' },
+    { id: 'reports', label: 'Reports' },
     { id: 'settings', label: 'Settings' },
   ];
 

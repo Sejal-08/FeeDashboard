@@ -6,6 +6,7 @@ import { StudentList } from './components/StudentList';
 import { FeeMatrix } from './components/FeeMatrix';
 import { AttendanceTracker } from './components/AttendanceTracker';
 import { MarksTracker } from './components/MarksTracker';
+import { Reports } from './components/Reports';
 import { Settings } from './components/Settings';
 
 function AppContent() {
@@ -23,6 +24,8 @@ function AppContent() {
         return <AttendanceTracker />;
       case 'marks':
         return <MarksTracker />;
+      case 'reports':
+        return <Reports />;
       case 'settings':
         return <Settings />;
       default:
