@@ -50,10 +50,7 @@ export const StudentList: React.FC = () => {
         </button>
       </div>
 
-      <div className="section-header" style={{ marginBottom: 0 }}>
-        <span className="section-badge">01</span>
-        <h3 className="section-title">Students</h3>
-      </div>
+
       
       {/* Batch selector */}
       <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '8px' }}>

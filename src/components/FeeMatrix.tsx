@@ -93,8 +93,6 @@ export const FeeMatrix: React.FC = () => {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       <div className="section-header" style={{ marginBottom: 0 }}>
-        <span className="section-badge">01</span>
-        <h3 className="section-title">Fee Tracking Matrix</h3>
         <div style={{ display: 'flex', gap: '8px', marginLeft: 'auto' }}>
           <button className="btn btn-sm" onClick={() => setBaseDate(subMonths(baseDate, 1))}>&larr; Prev</button>
           <button className="btn btn-primary btn-sm" onClick={() => setBaseDate(new Date())}>Current</button>
@@ -128,10 +126,6 @@ export const FeeMatrix: React.FC = () => {
       </div>
 
       <div className="card table-container">
-        <div className="section-header">
-          <span className="section-badge">02</span>
-          <h3 className="section-title">{activeBatchTab} Matrix</h3>
-        </div>
         {filteredStudents.length === 0 ? (
           <p style={{ color: 'var(--text-muted)', margin: '16px' }}>No students found in {activeBatchTab}.</p>
         ) : (
