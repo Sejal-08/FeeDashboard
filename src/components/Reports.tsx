@@ -4,6 +4,7 @@ import { format, subDays, addDays, subMonths, addMonths } from 'date-fns';
 import { Calendar } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import logoUrl from '../assets/Logo.jpg.jpeg';
 
 export const Reports: React.FC = () => {
   const { students, attendanceRecords, testRecords, markRecords, feeRecords } = useFeeData();
@@ -15,17 +16,66 @@ export const Reports: React.FC = () => {
   const absentDateStr = format(absentDate, 'yyyy-MM-dd');
   const unpaidMonthStr = format(unpaidMonth, 'yyyy-MM');
 
+  // --- Helper to add header ---
+  const addHeaderToDoc = (doc: jsPDF, reportTitle: string, dateText: string): Promise<number> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.src = logoUrl;
+      img.onload = () => {
+        doc.addImage(img, 'JPEG', 14, 10, 24, 24);
+        
+        doc.setFontSize(22);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(15, 23, 42); 
+        doc.text('Tarun Classes Of Mathematics', 42, 22);
+        
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(217, 119, 6); 
+        doc.text('EXCELLENCE IN MATHEMATICS', 42, 28);
+        
+        doc.setTextColor(0, 0, 0);
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        doc.text(reportTitle, 14, 46);
+        
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(100, 100, 100);
+        doc.text(dateText, 14, 53);
+        
+        resolve(58);
+      };
+      img.onerror = () => {
+        doc.setFontSize(22);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(15, 23, 42); 
+        doc.text('Tarun Classes Of Mathematics', 14, 22);
+        
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(217, 119, 6);
+        doc.text('EXCELLENCE IN MATHEMATICS', 14, 28);
+        
+        doc.setTextColor(0, 0, 0);
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        doc.text(reportTitle, 14, 46);
+        
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(100, 100, 100);
+        doc.text(dateText, 14, 53);
+        
+        resolve(58);
+      };
+    });
+  };
+
   // --- Report 1: Absentees all batches ---
-  const downloadAbsenteeReport = () => {
+  const downloadAbsenteeReport = async () => {
     const doc = new jsPDF();
-    doc.setFontSize(18);
-    doc.text('Tarun Classes Of Mathematics', 14, 22);
-    
-    doc.setFontSize(14);
-    doc.text('Absentee Report (All Batches)', 14, 32);
-    
-    doc.setFontSize(11);
-    doc.text(`Date: ${format(absentDate, 'dd MMM yyyy')}`, 14, 40);
+    const startY = await addHeaderToDoc(doc, 'Absentee Report (All Batches)', `Date: ${format(absentDate, 'dd MMM yyyy')}`);
 
     const absentStudents = students.filter(student => {
       const record = attendanceRecords.find(r => r.studentId === student.id && r.date === absentDateStr);
@@ -38,10 +88,10 @@ export const Reports: React.FC = () => {
       .map(student => [student.batch, student.name, "Absent"]);
 
     if (tableRows.length === 0) {
-      doc.text("No students are recorded as absent on this date.", 14, 50);
+      doc.text("No students are recorded as absent on this date.", 14, startY + 5);
     } else {
       autoTable(doc, {
-        startY: 45,
+        startY: startY,
         head: [tableColumn],
         body: tableRows,
       });
@@ -51,17 +101,11 @@ export const Reports: React.FC = () => {
   };
 
   // --- Report 2: Test marks all batches ---
-  const downloadTestMarksReport = () => {
+  const downloadTestMarksReport = async () => {
     const doc = new jsPDF();
-    doc.setFontSize(18);
-    doc.text('Tarun Classes Of Mathematics', 14, 22);
-    
-    doc.setFontSize(14);
-    doc.text('All Batches Test Marks', 14, 32);
-    doc.setFontSize(11);
-    doc.text(`Generated: ${format(new Date(), 'dd MMM yyyy')}`, 14, 40);
+    const initialY = await addHeaderToDoc(doc, 'All Batches Test Marks', `Generated: ${format(new Date(), 'dd MMM yyyy')}`);
 
-    let startY = 45;
+    let startY = initialY;
 
     // Group tests by batch
     const batches = ['Class 8', 'Class 9', 'Class 10', 'Class 11', 'Class 12'];
@@ -79,8 +123,12 @@ export const Reports: React.FC = () => {
         }
 
         doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(0, 0, 0);
         doc.text(`Test: ${test.testName} (${batch})`, 14, startY);
         doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(100, 100, 100);
         doc.text(`Date: ${format(new Date(test.date), 'dd MMM yyyy')} | Max Marks: ${test.maxMarks}`, 14, startY + 6);
 
         const testMarks = markRecords.filter(m => m.testId === test.id);
@@ -121,20 +169,12 @@ export const Reports: React.FC = () => {
   };
 
   // --- Report 3: Unpaid fees all batches ---
-  const downloadUnpaidFeesReport = () => {
+  const downloadUnpaidFeesReport = async () => {
     const doc = new jsPDF();
-    doc.setFontSize(18);
-    doc.text('Tarun Classes Of Mathematics', 14, 22);
-    
-    doc.setFontSize(14);
-    doc.text(`Unpaid Fees Report - ${format(unpaidMonth, 'MMMM yyyy')}`, 14, 32);
-    
-    doc.setFontSize(11);
-    doc.text(`Generated: ${format(new Date(), 'dd MMM yyyy')}`, 14, 40);
+    const startY = await addHeaderToDoc(doc, `Unpaid Fees Report - ${format(unpaidMonth, 'MMMM yyyy')}`, `Generated: ${format(new Date(), 'dd MMM yyyy')}`);
 
     const unpaidStudents = students.filter(student => {
       const record = feeRecords.find(r => r.studentId === student.id && r.month === unpaidMonthStr);
-      // If there's no record, or the status is not 'paid', it's considered unpaid/pending
       return !record || record.status !== 'paid';
     });
 
@@ -148,10 +188,10 @@ export const Reports: React.FC = () => {
       });
 
     if (tableRows.length === 0) {
-      doc.text("All students have paid their fees for this month.", 14, 50);
+      doc.text("All students have paid their fees for this month.", 14, startY + 5);
     } else {
       autoTable(doc, {
-        startY: 45,
+        startY: startY,
         head: [tableColumn],
         body: tableRows,
       });
