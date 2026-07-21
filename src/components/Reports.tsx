@@ -1,203 +1,66 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useFeeData } from '../FeeContext';
 import { format, subDays, addDays, subMonths, addMonths } from 'date-fns';
-import { Calendar } from 'lucide-react';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
-import logoUrl from '../assets/Logo.jpg.jpeg';
+import { Calendar, Download, FileText, Layers, Filter } from 'lucide-react';
+import {
+  downloadAbsenteeReport,
+  downloadUnpaidFeesReport,
+  downloadCombinedTestMarksReport,
+  downloadBatchWiseTestMarksReport,
+  downloadSingleTestReport
+} from '../utils/pdfGenerator';
 
 export const Reports: React.FC = () => {
   const { students, attendanceRecords, testRecords, markRecords, feeRecords } = useFeeData();
   
-  // States
+  // States for Absentee and Unpaid Fee Reports
   const [absentDate, setAbsentDate] = useState(new Date());
   const [unpaidMonth, setUnpaidMonth] = useState(new Date());
 
-  const absentDateStr = format(absentDate, 'yyyy-MM-dd');
-  const unpaidMonthStr = format(unpaidMonth, 'yyyy-MM');
+  // States for Test Marks Reports
+  const [testReportMode, setTestReportMode] = useState<'test' | 'batch' | 'combined'>('test');
+  const [selectedBatch, setSelectedBatch] = useState<string>('Class 10');
+  const [selectedTestId, setSelectedTestId] = useState<string>('');
 
-  // --- Helper to add header ---
-  const addHeaderToDoc = (doc: jsPDF, reportTitle: string, dateText: string): Promise<number> => {
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.src = logoUrl;
-      img.onload = () => {
-        doc.addImage(img, 'JPEG', 14, 10, 24, 24);
-        
-        doc.setFontSize(22);
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(15, 23, 42); 
-        doc.text('Tarun Classes Of Mathematics', 42, 22);
-        
-        doc.setFontSize(10);
-        doc.setFont('helvetica', 'normal');
-        doc.setTextColor(217, 119, 6); 
-        doc.text('EXCELLENCE IN MATHEMATICS', 42, 28);
-        
-        doc.setTextColor(0, 0, 0);
-        doc.setFontSize(14);
-        doc.setFont('helvetica', 'bold');
-        doc.text(reportTitle, 14, 46);
-        
-        doc.setFontSize(11);
-        doc.setFont('helvetica', 'normal');
-        doc.setTextColor(100, 100, 100);
-        doc.text(dateText, 14, 53);
-        
-        resolve(58);
-      };
-      img.onerror = () => {
-        doc.setFontSize(22);
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(15, 23, 42); 
-        doc.text('Tarun Classes Of Mathematics', 14, 22);
-        
-        doc.setFontSize(10);
-        doc.setFont('helvetica', 'normal');
-        doc.setTextColor(217, 119, 6);
-        doc.text('EXCELLENCE IN MATHEMATICS', 14, 28);
-        
-        doc.setTextColor(0, 0, 0);
-        doc.setFontSize(14);
-        doc.setFont('helvetica', 'bold');
-        doc.text(reportTitle, 14, 46);
-        
-        doc.setFontSize(11);
-        doc.setFont('helvetica', 'normal');
-        doc.setTextColor(100, 100, 100);
-        doc.text(dateText, 14, 53);
-        
-        resolve(58);
-      };
-    });
-  };
+  const batches = ['Class 8', 'Class 9', 'Class 10', 'Class 11', 'Class 12'];
 
-  // --- Report 1: Absentees all batches ---
-  const downloadAbsenteeReport = async () => {
-    const doc = new jsPDF();
-    const startY = await addHeaderToDoc(doc, 'Absentee Report (All Batches)', `Date: ${format(absentDate, 'dd MMM yyyy')}`);
+  // Filter tests by selected batch
+  const batchTests = testRecords
+    .filter(t => t.batch === selectedBatch)
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-    const absentStudents = students.filter(student => {
-      const record = attendanceRecords.find(r => r.studentId === student.id && r.date === absentDateStr);
-      return record?.status === 'absent';
-    });
-
-    const tableColumn = ["Batch", "Student Name", "Status"];
-    const tableRows = absentStudents
-      .sort((a, b) => a.batch.localeCompare(b.batch) || a.name.localeCompare(b.name))
-      .map(student => [student.batch, student.name, "Absent"]);
-
-    if (tableRows.length === 0) {
-      doc.text("No students are recorded as absent on this date.", 14, startY + 5);
+  // Auto-select first test when batch or tests change
+  useEffect(() => {
+    if (batchTests.length > 0) {
+      if (!selectedTestId || !batchTests.some(t => t.id === selectedTestId)) {
+        setSelectedTestId(batchTests[0].id);
+      }
     } else {
-      autoTable(doc, {
-        startY: startY,
-        head: [tableColumn],
-        body: tableRows,
-      });
+      setSelectedTestId('');
     }
+  }, [selectedBatch, testRecords]);
 
-    doc.save(`Absentees_All_Batches_${absentDateStr}.pdf`);
+  // Handlers for report downloads
+  const handleAbsenteeDownload = () => {
+    downloadAbsenteeReport(students, attendanceRecords, absentDate);
   };
 
-  // --- Report 2: Test marks all batches ---
-  const downloadTestMarksReport = async () => {
-    const doc = new jsPDF();
-    const initialY = await addHeaderToDoc(doc, 'All Batches Test Marks', `Generated: ${format(new Date(), 'dd MMM yyyy')}`);
-
-    let startY = initialY;
-
-    // Group tests by batch
-    const batches = ['Class 8', 'Class 9', 'Class 10', 'Class 11', 'Class 12'];
-    let hasTests = false;
-
-    batches.forEach(batch => {
-      const batchTests = testRecords.filter(t => t.batch === batch).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-      
-      batchTests.forEach(test => {
-        hasTests = true;
-        // Check if we need a new page
-        if (startY > 250) {
-          doc.addPage();
-          startY = 20;
-        }
-
-        doc.setFontSize(12);
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(0, 0, 0);
-        doc.text(`Test: ${test.testName} (${batch})`, 14, startY);
-        doc.setFontSize(10);
-        doc.setFont('helvetica', 'normal');
-        doc.setTextColor(100, 100, 100);
-        doc.text(`Date: ${format(new Date(test.date), 'dd MMM yyyy')} | Max Marks: ${test.maxMarks}`, 14, startY + 6);
-
-        const testMarks = markRecords.filter(m => m.testId === test.id);
-        const batchStudents = students.filter(s => s.batch === batch);
-        
-        const tableColumn = ["S.No", "Student Name", "Marks Obtained", "Percentage"];
-        const tableRows = batchStudents.map((student, index) => {
-          const markRec = testMarks.find(m => m.studentId === student.id);
-          const marksObtained = markRec ? markRec.marksObtained : null;
-          const percentage = marksObtained !== null ? ((marksObtained / test.maxMarks) * 100).toFixed(1) + '%' : 'N/A';
-          return [
-            (index + 1).toString(),
-            student.name,
-            marksObtained !== null ? marksObtained.toString() : 'Not Entered',
-            percentage
-          ];
-        });
-
-        autoTable(doc, {
-          startY: startY + 10,
-          head: [tableColumn],
-          body: tableRows,
-          theme: 'grid',
-          styles: { fontSize: 9 },
-          headStyles: { fillColor: [217, 119, 6] } // gold accent
-        });
-
-        // @ts-ignore
-        startY = doc.lastAutoTable.finalY + 15;
-      });
-    });
-
-    if (!hasTests) {
-      doc.text("No tests recorded yet.", 14, startY);
-    }
-
-    doc.save(`Test_Marks_All_Batches.pdf`);
+  const handleUnpaidFeesDownload = () => {
+    downloadUnpaidFeesReport(students, feeRecords, unpaidMonth);
   };
 
-  // --- Report 3: Unpaid fees all batches ---
-  const downloadUnpaidFeesReport = async () => {
-    const doc = new jsPDF();
-    const startY = await addHeaderToDoc(doc, `Unpaid Fees Report - ${format(unpaidMonth, 'MMMM yyyy')}`, `Generated: ${format(new Date(), 'dd MMM yyyy')}`);
-
-    const unpaidStudents = students.filter(student => {
-      const record = feeRecords.find(r => r.studentId === student.id && r.month === unpaidMonthStr);
-      return !record || record.status !== 'paid';
-    });
-
-    const tableColumn = ["Batch", "Student Name", "Status", "Amount Due (Rs)"];
-    const tableRows = unpaidStudents
-      .sort((a, b) => a.batch.localeCompare(b.batch) || a.name.localeCompare(b.name))
-      .map(student => {
-        const record = feeRecords.find(r => r.studentId === student.id && r.month === unpaidMonthStr);
-        const status = record ? record.status : 'pending';
-        return [student.batch, student.name, status.toUpperCase(), student.monthlyFee.toString()];
-      });
-
-    if (tableRows.length === 0) {
-      doc.text("All students have paid their fees for this month.", 14, startY + 5);
-    } else {
-      autoTable(doc, {
-        startY: startY,
-        head: [tableColumn],
-        body: tableRows,
-      });
+  const handleTestMarksDownload = () => {
+    if (testReportMode === 'combined') {
+      downloadCombinedTestMarksReport(students, testRecords, markRecords);
+    } else if (testReportMode === 'batch') {
+      downloadBatchWiseTestMarksReport(students, testRecords, markRecords, selectedBatch);
+    } else if (testReportMode === 'test') {
+      if (selectedTestId) {
+        downloadSingleTestReport(students, testRecords, markRecords, selectedTestId);
+      } else {
+        alert('Please select a test to download.');
+      }
     }
-
-    doc.save(`Unpaid_Fees_All_Batches_${unpaidMonthStr}.pdf`);
   };
 
   return (
@@ -228,32 +91,216 @@ export const Reports: React.FC = () => {
         <button 
           className="btn btn-primary" 
           style={{ width: '100%', padding: '16px', fontSize: '1rem', borderRadius: '8px', background: 'var(--accent-gold)' }} 
-          onClick={downloadAbsenteeReport}
+          onClick={handleAbsenteeDownload}
         >
-          Download absentee report (all batches, PDF)
+          <Download size={18} /> Download absentee report (all batches, PDF)
         </button>
         <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginTop: '12px' }}>
           Pulls saved attendance for the chosen date across 8th–12th batches into a single PDF.
         </p>
       </div>
 
-      {/* 02 Test Marks */}
+      {/* 02 Test Marks Reports */}
       <div className="card">
         <div className="section-header">
           <span className="section-badge" style={{ background: '#fef3c7', color: '#d97706' }}>02</span>
-          <h3 className="section-title">Test marks — all batches</h3>
+          <h3 className="section-title">Test marks reports</h3>
         </div>
         
-        <button 
-          className="btn btn-primary" 
-          style={{ width: '100%', padding: '16px', fontSize: '1rem', borderRadius: '8px', background: 'var(--accent-gold)' }} 
-          onClick={downloadTestMarksReport}
-        >
-          Download all batches marks (PDF)
-        </button>
-        <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginTop: '12px' }}>
-          Combines every recorded test for batches 8th–12th into one PDF, one table per test.
-        </p>
+        {/* Mode Selector Sub-Tabs */}
+        <div style={{ display: 'flex', gap: '8px', background: '#f1f5f9', padding: '4px', borderRadius: '8px', marginBottom: '20px' }}>
+          <button
+            onClick={() => setTestReportMode('test')}
+            style={{
+              flex: 1,
+              padding: '10px 14px',
+              border: 'none',
+              borderRadius: '6px',
+              fontWeight: 600,
+              fontSize: '0.9rem',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+              background: testReportMode === 'test' ? 'var(--bg-card)' : 'transparent',
+              color: testReportMode === 'test' ? 'var(--accent-blue)' : 'var(--text-muted)',
+              boxShadow: testReportMode === 'test' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'
+            }}
+          >
+            <FileText size={16} /> Test-Wise
+          </button>
+          <button
+            onClick={() => setTestReportMode('batch')}
+            style={{
+              flex: 1,
+              padding: '10px 14px',
+              border: 'none',
+              borderRadius: '6px',
+              fontWeight: 600,
+              fontSize: '0.9rem',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+              background: testReportMode === 'batch' ? 'var(--bg-card)' : 'transparent',
+              color: testReportMode === 'batch' ? 'var(--accent-blue)' : 'var(--text-muted)',
+              boxShadow: testReportMode === 'batch' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'
+            }}
+          >
+            <Filter size={16} /> Batch-Wise
+          </button>
+          <button
+            onClick={() => setTestReportMode('combined')}
+            style={{
+              flex: 1,
+              padding: '10px 14px',
+              border: 'none',
+              borderRadius: '6px',
+              fontWeight: 600,
+              fontSize: '0.9rem',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+              background: testReportMode === 'combined' ? 'var(--bg-card)' : 'transparent',
+              color: testReportMode === 'combined' ? 'var(--accent-blue)' : 'var(--text-muted)',
+              boxShadow: testReportMode === 'combined' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'
+            }}
+          >
+            <Layers size={16} /> Combined (All)
+          </button>
+        </div>
+
+        {/* Content based on Mode */}
+        {testReportMode === 'test' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {/* Batch Selector */}
+            <div>
+              <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600, marginBottom: '8px' }}>
+                1. SELECT BATCH
+              </label>
+              <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px' }}>
+                {batches.map((b, idx) => {
+                  const isActive = selectedBatch === b;
+                  const numMatch = b.match(/\d+/);
+                  const num = numMatch ? numMatch[0] : (idx + 1);
+                  return (
+                    <button 
+                      key={b}
+                      onClick={() => setSelectedBatch(b)}
+                      className={`batch-pill ${isActive ? 'active' : ''}`}
+                    >
+                      <div className="batch-pill-icon">{num}</div>
+                      {b}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Test Selector */}
+            <div>
+              <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600, marginBottom: '8px' }}>
+                2. SELECT TEST
+              </label>
+              {batchTests.length === 0 ? (
+                <div style={{ padding: '12px', background: '#f8fafc', borderRadius: '8px', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+                  No tests found for {selectedBatch}. Create a test in Marks Tracker first.
+                </div>
+              ) : (
+                <select
+                  className="form-control"
+                  style={{ width: '100%', fontWeight: 500 }}
+                  value={selectedTestId}
+                  onChange={(e) => setSelectedTestId(e.target.value)}
+                >
+                  {batchTests.map(t => (
+                    <option key={t.id} value={t.id}>
+                      {t.testName} — {format(new Date(t.date), 'dd MMM yyyy')} (Max: {t.maxMarks} marks)
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+
+            <button 
+              className="btn btn-primary" 
+              style={{ width: '100%', padding: '16px', fontSize: '1rem', borderRadius: '8px', background: 'var(--accent-gold)', marginTop: '8px' }} 
+              onClick={handleTestMarksDownload}
+              disabled={batchTests.length === 0 || !selectedTestId}
+            >
+              <Download size={18} /> Download Test-Wise Report (PDF)
+            </button>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+              Generates a PDF report for a single test with student marks, percentages, and class summary stats.
+            </p>
+          </div>
+        )}
+
+        {testReportMode === 'batch' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {/* Batch Selector */}
+            <div>
+              <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600, marginBottom: '8px' }}>
+                SELECT BATCH
+              </label>
+              <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px' }}>
+                {batches.map((b, idx) => {
+                  const isActive = selectedBatch === b;
+                  const numMatch = b.match(/\d+/);
+                  const num = numMatch ? numMatch[0] : (idx + 1);
+                  return (
+                    <button 
+                      key={b}
+                      onClick={() => setSelectedBatch(b)}
+                      className={`batch-pill ${isActive ? 'active' : ''}`}
+                    >
+                      <div className="batch-pill-icon">{num}</div>
+                      {b}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div style={{ padding: '12px 16px', background: '#f8fafc', borderRadius: '8px', border: '1px solid var(--border-color)', color: 'var(--text-main)', fontSize: '0.95rem' }}>
+              📊 <strong>{batchTests.length}</strong> test(s) recorded for <strong>{selectedBatch}</strong>
+            </div>
+
+            <button 
+              className="btn btn-primary" 
+              style={{ width: '100%', padding: '16px', fontSize: '1rem', borderRadius: '8px', background: 'var(--accent-gold)' }} 
+              onClick={handleTestMarksDownload}
+            >
+              <Download size={18} /> Download {selectedBatch} Report (PDF)
+            </button>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+              Pulls all test reports recorded for {selectedBatch} into a single PDF document.
+            </p>
+          </div>
+        )}
+
+        {testReportMode === 'combined' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ padding: '12px 16px', background: '#f8fafc', borderRadius: '8px', border: '1px solid var(--border-color)', color: 'var(--text-main)', fontSize: '0.95rem' }}>
+              🌐 Includes all tests across <strong>Class 8, Class 9, Class 10, Class 11, Class 12</strong> ({testRecords.length} total test records)
+            </div>
+
+            <button 
+              className="btn btn-primary" 
+              style={{ width: '100%', padding: '16px', fontSize: '1rem', borderRadius: '8px', background: 'var(--accent-gold)' }} 
+              onClick={handleTestMarksDownload}
+            >
+              <Download size={18} /> Download Combined Report (All Batches, PDF)
+            </button>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+              Combines every recorded test for batches 8th–12th into one comprehensive PDF.
+            </p>
+          </div>
+        )}
       </div>
 
       {/* 03 Unpaid fees */}
@@ -281,9 +328,9 @@ export const Reports: React.FC = () => {
         <button 
           className="btn btn-primary" 
           style={{ width: '100%', padding: '16px', fontSize: '1rem', borderRadius: '8px', background: 'var(--accent-gold)' }} 
-          onClick={downloadUnpaidFeesReport}
+          onClick={handleUnpaidFeesDownload}
         >
-          Download unpaid fees report (all batches, PDF)
+          <Download size={18} /> Download unpaid fees report (all batches, PDF)
         </button>
         <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginTop: '12px' }}>
           Lists every unpaid student across 8th–12th batches for the chosen month, in one PDF.

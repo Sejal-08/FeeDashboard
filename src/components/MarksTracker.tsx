@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useFeeData } from '../FeeContext';
 import { format } from 'date-fns';
+import { Download } from 'lucide-react';
+import { downloadSingleTestReport } from '../utils/pdfGenerator';
 
 export const MarksTracker: React.FC = () => {
   const { students, testRecords, markRecords, addTestRecord, deleteTestRecord, saveBulkMarks } = useFeeData();
@@ -204,6 +206,9 @@ export const MarksTracker: React.FC = () => {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <button className="btn btn-primary" style={{ padding: '16px' }} onClick={handleSaveMarks}>Save marks for {selectedTest.testName}</button>
+            <button className="btn btn-outline" style={{ padding: '16px', borderRadius: '8px' }} onClick={() => downloadSingleTestReport(students, testRecords, markRecords, selectedTest.id)}>
+              <Download size={18} /> Download Test Report (PDF)
+            </button>
             <button className="btn" style={{ padding: '16px', background: 'transparent', color: 'var(--accent-red)', border: 'none' }} onClick={handleDeleteTest}>Delete this test</button>
           </div>
         </div>
